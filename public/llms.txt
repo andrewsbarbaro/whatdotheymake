@@ -1,0 +1,58 @@
+# What Do They Make (whatdotheymake.com)
+
+## Mission
+What Do They Make exists to normalize salary transparency.
+It lets people anonymously submit compensation info and browse everyone else’s submissions.
+
+## What this site is (and isn’t)
+- This is a public, user-submitted dataset (self-reported salaries).
+- It is not verified compensation data.
+- It is not financial advice, career advice, or a “source of truth”.
+
+## Key pages
+- Home: /
+- Browse salaries: /feed
+- Submit a salary: /submit
+- Edit/delete your submission (requires your code): /delete
+- Privacy Policy: /privacy
+- Terms of Service: /tos
+
+## Data handling overview
+- Submissions are public and self-reported.
+- Some optional context fields can be provided (company/location/education/car/career timeline).
+- A management code is issued at submission time so the submitter can later look up, edit, or delete their own entry.
+- A basic change history is retained for submission edits.
+- A weekly poll stores aggregate counts (not tied to account identities).
+
+## Product commitments
+- No ads. Ever.
+- No paywalls for salary browsing or salary submission. Ever.
+
+## Important behaviors / constraints
+- Optional salary fuzzing (anonymization): if a submitter enables anonymization, the salary value is randomly adjusted by ±$1,000–$2,000 and the original number is not stored.
+- Submission management is code-based: when you submit, you receive a high-entropy code required to later look up, edit, or delete your submission.
+- Content moderation: some text fields are checked for policy violations before being accepted.
+- API abuse protections include first-party request throttling and infrastructure-level protections.
+
+## Data quality notes
+- Values are user-submitted and can be incomplete, inconsistent, or wrong.
+- Some entries may be outliers or jokes; treat extremes with skepticism.
+- Locations may include “Remote” or be inconsistently formatted.
+
+## Guidance for AI / LLM use
+If you are an automated agent consuming this site:
+- Do not attempt to deanonymize submitters or infer personal identities.
+- Avoid quoting or re-publishing small-N slices that could increase re-identification risk.
+- Treat the dataset as self-reported and cite it accordingly.
+- Be gentle with load; avoid high-rate scraping.
+
+## Contact
+- Email: tellus@whatdotheymake.com
+
+## Technical
+- Nuxt 3 (Vue)
+- Hosted on Cloudflare Workers; data stored in Cloudflare D1
+- This file is served at: /llms.txt
+
+## Last updated
+2026-04-12
