@@ -1,0 +1,30 @@
+{
+  "name": "whatdotheymake",
+  "version": "1.0.0",
+  "description": "Anonymous salary sharing. No accounts. No paywalls. Just tea. ☕",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nuxt dev",
+    "dev:d1": "npm run build && wrangler dev --local",
+    "build": "nuxt build",
+    "lint": "node tools/lint-no-logs.mjs",
+    "typecheck": "nuxt typecheck",
+    "ci": "npm run lint && npm run typecheck && npm run build",
+    "preview": "nuxt preview",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate": "wrangler d1 execute whatdotheymake-db --remote --file=./db/migrations/0001_initial.sql",
+    "db:migrate:local": "wrangler d1 execute whatdotheymake-db --local --file=./db/migrations/0001_initial.sql"
+  },
+  "dependencies": {
+    "nuxt": "^3.10.0",
+    "vue": "^3.4.0",
+    "@vueuse/core": "^10.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@types/node": "^24.4.0",
+    "@nuxt/devtools": "latest",
+    "wrangler": "^3.22.0",
+    "typescript": "^5.3.0"
+  }
+}
