@@ -6,6 +6,7 @@
       </NuxtLink>
       <div class="nav-links">
         <NuxtLink to="/feed" class="nav-link">Browse</NuxtLink>
+        <NuxtLink to="/affiliates" class="nav-link">Partners &amp; Affliates</NuxtLink>
         <NuxtLink to="/delete" class="nav-link">Manage</NuxtLink>
         <NuxtLink to="/feedback" class="nav-link">Feedback</NuxtLink>
         <NuxtLink to="/submit" class="nav-cta btn-primary">Spill Your Salary →</NuxtLink>
@@ -76,6 +77,7 @@
 @media (max-width: 500px) {
   .logo-img { height: 28px; }
   .nav-link { display: none; }
+  .nav-link[href='/affiliates'] { display: inline; }
   .nav-cta { font-size: 0.8rem; padding: 0.5rem 1rem; }
 }
 </style>

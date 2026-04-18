@@ -28,6 +28,7 @@
         <NuxtLink to="/feed" class="footer-btn">Browse Salaries</NuxtLink>
         <NuxtLink to="/delete" class="footer-btn">Manage My Data</NuxtLink>
         <NuxtLink to="/feedback" class="footer-btn">Leave Feedback</NuxtLink>
+        <NuxtLink to="/affiliates" class="footer-btn">Partners &amp; Affliates</NuxtLink>
         <NuxtLink to="/privacy" class="footer-btn">Privacy Policy</NuxtLink>
         <NuxtLink to="/tos" class="footer-btn">Terms of Service</NuxtLink>
         <a href="/llms.txt" class="footer-btn">AI / LLMs</a>
