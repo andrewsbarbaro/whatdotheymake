@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -0 grep -l \"\\\\.put\\\\|\\\\.get\\\\|\\\\.list\\\\|\\\\.delete\")"
+    ]
+  }
+}

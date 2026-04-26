@@ -114,7 +114,5 @@ export default defineNuxtConfig({
     public: {
       siteUrl: 'https://whatdotheymake.com'
     }
-  },
-
-  compatibilityDate: '2024-01-01'
+  }
 })
