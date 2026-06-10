@@ -84,28 +84,14 @@ function normalizeEstimate(raw: any): SalaryEstimate | null {
   return { low: l, median: m, high: h, confidence, normalized_title, notes }
 }
 
-function getLlmApiKey(event?: H3Event): string {
+function getAnthropicApiKey(event?: H3Event): string {
   const config = useRuntimeConfig() as any
-  const runtimeValue = String(config.llmSalaryApiKey || '').trim()
+  const runtimeValue = String(config.anthropicApiKey || '').trim()
   if (runtimeValue) return runtimeValue
   const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_LLM_SALARY_API_KEY || '').trim()
+  return String(cf?.NUXT_ANTHROPIC_API_KEY || '').trim()
 }
 
-function getLlmBaseUrl(event?: H3Event): string {
-  const config = useRuntimeConfig() as any
-  const runtimeValue = String(config.llmBaseUrl || '').trim()
-  if (runtimeValue) return runtimeValue.replace(/\/+$/g, '')
-  const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_LLM_BASE_URL || '').trim().replace(/\/+$/g, '')
-}
-function getFailoverApiKey(event?: H3Event): string {
-  const config = useRuntimeConfig() as any
-  const runtimeValue = String(config.llmFailoverApiKey || '').trim()
-  if (runtimeValue) return runtimeValue
-  const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_LLM_FAILOVER_API_KEY || '').trim()
-}
 function getAnthropicBaseUrl(event?: H3Event): string {
   const config = useRuntimeConfig() as any
   const runtimeValue = String(config.anthropicBaseUrl || '').trim()
@@ -114,12 +100,6 @@ function getAnthropicBaseUrl(event?: H3Event): string {
   return String(cf?.NUXT_ANTHROPIC_BASE_URL || 'https://api.anthropic.com').trim().replace(/\/+$/g, '')
 }
 
-function getMessagesUrl(event?: H3Event): string {
-  const base = getLlmBaseUrl(event)
-  if (!base) return ''
-  if (base.endsWith('/v1')) return `${base}/messages`
-  return `${base}/v1/messages`
-}
 function getAnthropicMessagesUrl(event?: H3Event): string {
   const base = getAnthropicBaseUrl(event)
   if (!base) return ''
@@ -209,12 +189,11 @@ function isOverloadedErrorPayload(payload: any): boolean {
 
 async function callClaudeSalaryEstimate(prompt: string, event?: H3Event): Promise<SalaryEstimate> {
   const config = useRuntimeConfig() as any
-  const primaryApiKey = getLlmApiKey(event)
-  const failoverApiKey = getFailoverApiKey(event)
-  if (!primaryApiKey && !failoverApiKey) {
+  const apiKey = getAnthropicApiKey(event)
+  if (!apiKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Salary scoring is not configured (missing NUXT_LLM_SALARY_API_KEY and NUXT_LLM_FAILOVER_API_KEY).',
+      statusMessage: 'Salary scoring is not configured (missing NUXT_ANTHROPIC_API_KEY).',
     })
   }
 
@@ -239,76 +218,6 @@ async function callClaudeSalaryEstimate(prompt: string, event?: H3Event): Promis
     messages: [{ role: 'user', content: userPrompt }],
   })
 
-  const attempt = async (userPrompt: string, url: string, requestApiKey: string) => {
-
-    let res: Response
-    try {
-
-      const headers: Record<string, string> = {
-        'content-type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        authorization: `Bearer ${requestApiKey}`,
-        'x-api-key': requestApiKey,
-      }
-
-      res = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(makeRequestBody(userPrompt)),
-        signal: controller.signal,
-      })
-    } catch (err: any) { throw err }
-
-    if (!res.ok) {
-      let bodyText: string | undefined
-      try { bodyText = await res.text() } catch { bodyText = undefined }
-      let bodyJson: any = null
-      if (bodyText) {
-        try { bodyJson = JSON.parse(bodyText) } catch { bodyJson = null }
-      }
-
-      if (isOverloadedErrorPayload(bodyJson)) {
-        const overloadErr: any = new Error('Primary LLM endpoint overloaded')
-        overloadErr.code = 'OVERLOADED'
-        throw overloadErr
-      }
-      throw createError({
-        statusCode: 502,
-        statusMessage: `Salary estimate request failed (${res.status}).`,
-      })
-    }
-
-    const data: any = await res.json()
-    if (isOverloadedErrorPayload(data)) {
-      const overloadErr: any = new Error('Primary LLM endpoint overloaded')
-      overloadErr.code = 'OVERLOADED'
-      throw overloadErr
-    }
-
-
-    const toolUse = data?.content?.find((c: any) => c?.type === 'tool_use' && c?.name === SALARY_TOOL_NAME)
-    if (toolUse?.input != null) {
-      const normalized = normalizeEstimate(toolUse.input)
-      if (normalized) return normalized
-      const e: any = new Error('Salary estimate tool output was invalid')
-      e.code = 'INVALID_TOOL_INPUT'
-      e.toolInput = toolUse.input
-      throw e
-    }
-
-    const text = data?.content?.find((c: any) => c?.type === 'text')?.text
-    if (typeof text === 'string' && text.trim()) {
-
-      try {
-        const obj = JSON.parse(text.trim())
-        const normalized = normalizeEstimate(obj)
-        if (normalized) return normalized
-      } catch (err: any) {}
-    }
-
-    throw new Error('Salary estimate response missing tool output')
-  }
-
   const correctionPrompt = (badToolInput: any) => [
     'Your previous salary_estimate tool call input was INVALID because it did not include the required numeric keys low, median, high, confidence.',
     `Invalid input was: ${JSON.stringify(badToolInput)}`,
@@ -321,59 +230,99 @@ async function callClaudeSalaryEstimate(prompt: string, event?: H3Event): Promis
   ].join('\n')
 
   try {
-    const primaryUrl = getMessagesUrl(event)
-    const failoverUrl = getAnthropicMessagesUrl(event)
-
-    const runWithEndpoint = async (url: string, apiKey: string): Promise<SalaryEstimate> => {
-      try {
-        return await attempt(prompt, url, apiKey)
-      } catch (err: any) {
-        if (err?.code === 'OVERLOADED') throw err
-        if (err?.code === 'INVALID_TOOL_INPUT') {
-          return await attempt(correctionPrompt(err?.toolInput), url, apiKey)
-        }
-        return await attempt(prompt, url, apiKey)
-      }
-    }
-
-    let primaryErr: any = null
-
-    if (primaryUrl && primaryApiKey) {
-      try {
-        return await runWithEndpoint(primaryUrl, primaryApiKey)
-      } catch (err: any) {
-        primaryErr = err
-      }
-    }
-
-    if (failoverApiKey) {
-      try {
-        return await runWithEndpoint(failoverUrl, failoverApiKey)
-      } catch (failoverErr: any) {
-        if (primaryErr) throw primaryErr
-        throw failoverErr
-      }
-    }
-
-    if (!primaryUrl) {
+    const url = getAnthropicMessagesUrl(event)
+    if (!url) {
       throw createError({
         statusCode: 500,
-        statusMessage: 'LLM proxy is not configured (missing NUXT_LLM_BASE_URL), and failover API key is not set.',
+        statusMessage: 'Anthropic API URL is not configured.',
       })
     }
 
-    throw primaryErr || createError({
-      statusCode: 502,
-      statusMessage: 'Salary estimate failed. Try again.',
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+      'anthropic-version': '2023-06-01',
+      'x-api-key': apiKey,
+    }
+
+    // Try initial request
+    let res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(makeRequestBody(prompt)),
+      signal: controller.signal,
     })
+
+    if (!res.ok) {
+      let bodyJson: any = null
+      try { bodyJson = await res.json() } catch { }
+      if (isOverloadedErrorPayload(bodyJson)) {
+        throw createError({
+          statusCode: 503,
+          statusMessage: 'Anthropic API is overloaded. Try again shortly.',
+        })
+      }
+      throw createError({
+        statusCode: 502,
+        statusMessage: `Salary estimate request failed (${res.status}).`,
+      })
+    }
+
+    let data: any = await res.json()
+    if (isOverloadedErrorPayload(data)) {
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Anthropic API is overloaded. Try again shortly.',
+      })
+    }
+
+    // Check for tool use output
+    let toolUse = data?.content?.find((c: any) => c?.type === 'tool_use' && c?.name === SALARY_TOOL_NAME)
+    if (toolUse?.input != null) {
+      const normalized = normalizeEstimate(toolUse.input)
+      if (normalized) return normalized
+
+      // Tool input was invalid, retry with correction prompt
+      res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(makeRequestBody(correctionPrompt(toolUse.input))),
+        signal: controller.signal,
+      })
+
+      if (!res.ok) {
+        throw createError({
+          statusCode: 502,
+          statusMessage: 'Salary estimate correction request failed.',
+        })
+      }
+
+      data = await res.json()
+      toolUse = data?.content?.find((c: any) => c?.type === 'tool_use' && c?.name === SALARY_TOOL_NAME)
+      if (toolUse?.input != null) {
+        const normalized = normalizeEstimate(toolUse.input)
+        if (normalized) return normalized
+      }
+    }
+
+    // Check for text response as fallback
+    const text = data?.content?.find((c: any) => c?.type === 'text')?.text
+    if (typeof text === 'string' && text.trim()) {
+      try {
+        const obj = JSON.parse(text.trim())
+        const normalized = normalizeEstimate(obj)
+        if (normalized) return normalized
+      } catch { }
+    }
+
+    throw new Error('Salary estimate response missing valid tool output')
   } catch (err: any) {
+    if (err?.statusCode) throw err
     if (err?.name === 'AbortError') {
       throw createError({
         statusCode: 504,
         statusMessage: 'Salary estimate request timed out.',
       })
     }
-
     throw createError({
       statusCode: 502,
       statusMessage: 'Salary estimate failed. Try again.',

@@ -143,28 +143,14 @@ function normalizeAssessment(input: any): ModerationAssessment {
   return { allow, violations }
 }
 
-function getLlmApiKey(event?: H3Event): string {
+function getAnthropicApiKey(event?: H3Event): string {
   const config = useRuntimeConfig() as any
-  const runtimeValue = String(config.llmAutomodApiKey || '').trim()
+  const runtimeValue = String(config.anthropicApiKey || '').trim()
   if (runtimeValue) return runtimeValue
   const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_LLM_AUTOMOD_API_KEY || '').trim()
+  return String(cf?.NUXT_ANTHROPIC_API_KEY || '').trim()
 }
 
-function getLlmBaseUrl(event?: H3Event): string {
-  const config = useRuntimeConfig() as any
-  const runtimeValue = String(config.llmBaseUrl || '').trim()
-  if (runtimeValue) return runtimeValue.replace(/\/+$/g, '')
-  const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_LLM_BASE_URL || '').trim().replace(/\/+$/g, '')
-}
-function getFailoverApiKey(event?: H3Event): string {
-  const config = useRuntimeConfig() as any
-  const runtimeValue = String(config.llmFailoverApiKey || '').trim()
-  if (runtimeValue) return runtimeValue
-  const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_LLM_FAILOVER_API_KEY || '').trim()
-}
 function getAnthropicBaseUrl(event?: H3Event): string {
   const config = useRuntimeConfig() as any
   const runtimeValue = String(config.anthropicBaseUrl || '').trim()
@@ -173,13 +159,6 @@ function getAnthropicBaseUrl(event?: H3Event): string {
   return String(cf?.NUXT_ANTHROPIC_BASE_URL || 'https://api.anthropic.com').trim().replace(/\/+$/g, '')
 }
 
-function getMessagesUrl(event?: H3Event): string {
-  const base = getLlmBaseUrl(event)
-  if (!base) return ''
-  // LiteLLM often exposes Anthropic-native at /v1/messages
-  if (base.endsWith('/v1')) return `${base}/messages`
-  return `${base}/v1/messages`
-}
 function getAnthropicMessagesUrl(event?: H3Event): string {
   const base = getAnthropicBaseUrl(event)
   if (!base) return ''
@@ -196,12 +175,11 @@ function isOverloadedErrorPayload(payload: any): boolean {
 async function callClaudeModeration(prompt: string, event?: H3Event): Promise<ModerationAssessment> {
   const config = useRuntimeConfig() as any
 
-  const apiKey = getLlmApiKey(event)
-  const failoverApiKey = getFailoverApiKey(event)
-  if (!apiKey && !failoverApiKey) {
+  const apiKey = getAnthropicApiKey(event)
+  if (!apiKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Moderation is not configured (missing NUXT_LLM_AUTOMOD_API_KEY and NUXT_LLM_FAILOVER_API_KEY).',
+      statusMessage: 'Moderation is not configured (missing NUXT_ANTHROPIC_API_KEY).',
     })
   }
 
@@ -225,14 +203,19 @@ async function callClaudeModeration(prompt: string, event?: H3Event): Promise<Mo
     messages: [{ role: 'user', content: prompt }],
   })
 
-  const attempt = async (url: string, requestApiKey: string) => {
+  try {
+    const url = getAnthropicMessagesUrl(event)
+    if (!url) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Anthropic API URL is not configured.',
+      })
+    }
 
     const headers: Record<string, string> = {
       'content-type': 'application/json',
       'anthropic-version': '2023-06-01',
-      // LiteLLM typically uses Bearer auth, but many deployments also accept x-api-key.
-      authorization: `Bearer ${requestApiKey}`,
-      'x-api-key': requestApiKey,
+      'x-api-key': apiKey,
     }
 
     const res = await fetch(url, {
@@ -250,9 +233,10 @@ async function callClaudeModeration(prompt: string, event?: H3Event): Promise<Mo
         try { bodyJson = JSON.parse(bodyText) } catch { bodyJson = null }
       }
       if (isOverloadedErrorPayload(bodyJson)) {
-        const overloadErr: any = new Error('Primary LLM endpoint overloaded')
-        overloadErr.code = 'OVERLOADED'
-        throw overloadErr
+        throw createError({
+          statusCode: 503,
+          statusMessage: 'Anthropic API is overloaded. Try again shortly.',
+        })
       }
       throw createError({
         statusCode: 502,
@@ -262,9 +246,10 @@ async function callClaudeModeration(prompt: string, event?: H3Event): Promise<Mo
 
     const data: any = await res.json()
     if (isOverloadedErrorPayload(data)) {
-      const overloadErr: any = new Error('Primary LLM endpoint overloaded')
-      overloadErr.code = 'OVERLOADED'
-      throw overloadErr
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Anthropic API is overloaded. Try again shortly.',
+      })
     }
 
     const toolUse = data?.content?.find((c: any) => c?.type === 'tool_use' && c?.name === MODERATION_TOOL_NAME)
@@ -276,58 +261,14 @@ async function callClaudeModeration(prompt: string, event?: H3Event): Promise<Mo
     }
 
     return normalizeAssessment(parseJsonFromClaude(text))
-  }
-
-  try {
-    const primaryUrl = getMessagesUrl(event)
-    let primaryErr: any = null
-
-    if (primaryUrl && apiKey) {
-      try {
-        try {
-          return await attempt(primaryUrl, apiKey)
-        } catch (err: any) {
-          if (err?.code === 'OVERLOADED') throw err
-          return await attempt(primaryUrl, apiKey)
-        }
-      } catch (err: any) {
-        primaryErr = err
-      }
-    }
-
-    if (failoverApiKey) {
-      const failoverUrl = getAnthropicMessagesUrl(event)
-      try {
-        try {
-          return await attempt(failoverUrl, failoverApiKey)
-        } catch {
-          return await attempt(failoverUrl, failoverApiKey)
-        }
-      } catch (failoverErr: any) {
-        if (primaryErr) throw primaryErr
-        throw failoverErr
-      }
-    }
-
-    if (!primaryUrl) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'LLM proxy is not configured (missing NUXT_LLM_BASE_URL), and failover API key is not set.',
-      })
-    }
-
-    throw primaryErr || createError({
-      statusCode: 502,
-      statusMessage: 'Moderation failed. Try again.',
-    })
   } catch (err: any) {
+    if (err?.statusCode) throw err
     if (err?.name === 'AbortError') {
       throw createError({
         statusCode: 504,
         statusMessage: 'Moderation request timed out.',
       })
     }
-
     throw createError({
       statusCode: 502,
       statusMessage: 'Moderation failed. Try again.',
