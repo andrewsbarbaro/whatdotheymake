@@ -24,7 +24,7 @@
             <div v-for="r in displayedStates" :key="r.state" class="row">
               <div class="row-left">
                 <span class="pill">{{ formatScopeLabel(r.state) }}</span>
-                <span class="count">{{ formatNum(r.count) }} drops</span>
+                <span class="count">{{ formatNum(r.count) }} submissions</span>
               </div>
               <div class="row-right">
                 <span class="value">{{ formatMoney(r.mean_salary, r.state) }}</span>

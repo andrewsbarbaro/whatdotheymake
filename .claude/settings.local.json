@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs -0 grep -l \"\\\\.put\\\\|\\\\.get\\\\|\\\\.list\\\\|\\\\.delete\")"
+      "Bash(xargs -0 grep -l \"\\\\.put\\\\|\\\\.get\\\\|\\\\.list\\\\|\\\\.delete\")",
+      "Bash(npm run *)",
+      "Read(//home/deck/.nvm/versions/node/**)",
+      "Bash(command -v volta)",
+      "Bash(git rm *)"
     ]
   }
 }

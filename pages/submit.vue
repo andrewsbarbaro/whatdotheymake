@@ -9,7 +9,7 @@
         <h2 class="edit-success-title">Updated!</h2>
         <p class="edit-success-text">Your submission has been updated. The changes are live now and recorded in your change history.</p>
         <div class="edit-success-actions">
-          <NuxtLink to="/feed" class="btn-primary">See the feed →</NuxtLink>
+          <NuxtLink to="/feed" class="btn-primary">See the feed</NuxtLink>
           <NuxtLink to="/" class="btn-secondary">Back to home</NuxtLink>
         </div>
       </div>
@@ -39,9 +39,9 @@ const editData = computed(() => isEditMode.value ? editState.value : undefined)
 const editToken = computed(() => isEditMode.value ? editState.value?.token : undefined)
 
 useHead({
-  title: isEditMode.value ? 'Edit Your Salary | WhatDoTheyMake.com' : 'Drop Your Salary | WhatDoTheyMake.com',
+  title: isEditMode.value ? 'Edit Your Salary | WhatDoTheyMake.com' : 'Share Your Salary | WhatDoTheyMake.com',
   meta: [
-    { name: 'description', content: 'Share your salary anonymously in 30 seconds. No accounts. No paywalls.' }
+    { name: 'description', content: 'Share your salary anonymously in under a minute. No accounts. No paywalls.' }
   ]
 })
 

@@ -1,8 +1,8 @@
 <template>
   <section class="recent" id="feed">
     <div class="recent-header">
-      <h2 class="recent-title">Recent Drops</h2>
-      <NuxtLink to="/feed" class="recent-link">See all salaries →</NuxtLink>
+      <h2 class="recent-title">Recent salaries</h2>
+      <NuxtLink to="/feed" class="recent-link">See all salaries</NuxtLink>
     </div>
 
     <div v-if="loading" class="recent-loading">
@@ -10,13 +10,13 @@
     </div>
 
     <div v-else-if="salaries.length === 0" class="recent-empty">
-      <p>No salaries yet. Be the first to spill! ☕</p>
-      <NuxtLink to="/submit" class="btn-primary">Drop Your Salary</NuxtLink>
+      <p>No salaries yet. Be the first to share.</p>
+      <NuxtLink to="/submit" class="btn-primary">Share your salary</NuxtLink>
     </div>
 
     <div v-else-if="error" class="recent-empty">
       <p>{{ error }}</p>
-      <NuxtLink to="/feed" class="btn-secondary">Try again →</NuxtLink>
+      <NuxtLink to="/feed" class="btn-secondary">Try again</NuxtLink>
     </div>
 
     <div v-else class="recent-cards">
@@ -24,7 +24,7 @@
     </div>
 
     <div v-if="salaries.length > 0" class="recent-cta">
-      <NuxtLink to="/feed" class="btn-secondary">Browse all salaries →</NuxtLink>
+      <NuxtLink to="/feed" class="btn-secondary">Browse all salaries</NuxtLink>
     </div>
   </section>
 </template>

@@ -1,11 +1,13 @@
 <template>
-  <section class="world-map-section">
+  <section class="world-map-section" :class="{ embedded }">
     <div class="world-map-inner">
-      <h2 class="world-map-title">Where salary submissions are coming from</h2>
-      <p class="world-map-sub">
-        Pan and zoom to explore submission density by location. Marker size reflects number of submissions.
-        Location data here comes only from what people submit — not from user tracking.
-      </p>
+      <template v-if="!embedded">
+        <h2 class="world-map-title">Where salary submissions are coming from</h2>
+        <p class="world-map-sub">
+          Pan and zoom to explore submission density by location. Marker size reflects number of submissions.
+          Location data here comes only from what people submit — not from user tracking.
+        </p>
+      </template>
 
       <div v-if="pending" class="world-map-loading">Loading map points…</div>
       <div v-else-if="error" class="world-map-error">Could not load map data right now.</div>
@@ -15,6 +17,11 @@
 </template>
 
 <script setup lang="ts">
+const props = withDefaults(defineProps<{ embedded?: boolean; backdrop?: boolean }>(), {
+  embedded: false,
+  backdrop: false,
+})
+
 type MapPoint = {
   id: string
   label: string
@@ -65,16 +72,21 @@ function renderMarkers(L: any) {
   for (const p of usable) {
     const marker = L.circleMarker([p.lat, p.lng], {
       radius: pointRadius(p.count),
-      color: '#7c3f00',
+      color: '#16a34a',
       weight: 1.5,
-      fillColor: '#a35400',
-      fillOpacity: 0.42,
+      fillColor: '#22c55e',
+      fillOpacity: 0.5,
+      className: 'salary-marker',
     })
     marker.bindPopup(`<strong>${p.label}</strong><br/>${p.count} submission${p.count === 1 ? '' : 's'}`)
     marker.addTo(markerLayer)
   }
 
   markerLayer.addTo(map)
+
+  // As a backdrop we keep a stable whole-world view instead of zooming to fit.
+  if (props.backdrop) return
+
   const bounds = markerLayer.getBounds?.()
   if (bounds?.isValid?.()) {
     map.fitBounds(bounds.pad(0.25), { maxZoom: 6 })
@@ -113,8 +125,9 @@ onMounted(async () => {
     worldCopyJump: true,
     minZoom: 2,
     maxZoom: 12,
-    zoomControl: true,
-  }).setView([20, 0], 2)
+    zoomControl: !props.backdrop,
+    scrollWheelZoom: !props.backdrop,
+  }).setView(props.backdrop ? [30, 5] : [20, 0], 2)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
@@ -150,6 +163,10 @@ onBeforeUnmount(() => {
 
 .world-map :deep(.dark-osm-tiles) {
   filter: invert(100%) hue-rotate(180deg) brightness(82%) contrast(92%) saturate(70%);
+}
+
+.world-map :deep(.salary-marker) {
+  filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.7));
 }
 
 .world-map-inner {
@@ -188,6 +205,31 @@ onBeforeUnmount(() => {
   text-align: center;
   color: var(--gray-600);
   padding: 2rem 1rem;
+}
+
+.world-map-section.embedded {
+  padding: 0;
+  z-index: auto;
+}
+
+.world-map-section.embedded .world-map-inner {
+  max-width: 100%;
+}
+
+.world-map-section.embedded .world-map {
+  height: 100%;
+  min-height: 440px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.world-map-section.embedded .world-map-loading,
+.world-map-section.embedded .world-map-error {
+  min-height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

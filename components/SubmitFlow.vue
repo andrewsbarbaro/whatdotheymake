@@ -10,7 +10,6 @@
 
           <!-- STEP 1: Job Title -->
           <template v-if="step === 1">
-            <div class="step-emoji">💼</div>
             <h2 class="step-question">What is your job title?</h2>
             <p class="step-hint">Share the role that best matches your current work.</p>
             <div class="field-stack">
@@ -43,12 +42,11 @@
               </div>
               <p v-if="hasFieldError('job_title')" class="field-error-msg">{{ fieldErrorMessage('job_title') }}</p>
             </div>
-            <button class="btn-primary step-next" @click="next" :disabled="!form.job_title.trim()">Next →</button>
+            <button class="btn-primary step-next" @click="next" :disabled="!form.job_title.trim()">Next</button>
           </template>
 
           <!-- STEP 2: Pay (salary vs hourly) -->
           <template v-else-if="step === 2">
-            <div class="step-emoji">💸</div>
             <h2 class="step-question">What is your base pay?</h2>
             <p class="step-hint">Enter base cash pay before taxes (not total comp).</p>
 
@@ -158,21 +156,20 @@
               </div>
               <div class="quick-actions">
                 <button class="btn-primary" @click="submitSalary" :disabled="!form.salary || submitting">
-                  {{ submitting ? 'SPILLING…' : 'Submit now →' }}
+                  {{ submitting ? 'Submitting…' : 'Submit now' }}
                 </button>
                 <button class="btn-secondary" type="button" @click="next" :disabled="!form.salary || submitting">
-                  Keep answering →
+                  Keep answering
                 </button>
               </div>
               <p v-if="error" class="error-msg">{{ error }}</p>
             </div>
 
-            <button v-else class="btn-primary step-next" @click="next" :disabled="!form.salary">Next →</button>
+            <button v-else class="btn-primary step-next" @click="next" :disabled="!form.salary">Next</button>
           </template>
 
           <!-- STEP 3: Company -->
           <template v-else-if="step === 3">
-            <div class="step-emoji">🏢</div>
             <h2 class="step-question">Which company do you work for?</h2>
             <p class="step-hint">Optional, but useful for comparisons.</p>
             <div class="field-stack">
@@ -194,13 +191,12 @@
             </div>
             <div class="step-actions">
               <button class="btn-secondary step-skip" @click="skip">Prefer not to share</button>
-              <button class="btn-primary step-next" @click="next">Next →</button>
+              <button class="btn-primary step-next" @click="next">Next</button>
             </div>
           </template>
 
           <!-- STEP 4: Location -->
           <template v-else-if="step === 4">
-            <div class="step-emoji">📍</div>
             <h2 class="step-question">Where are you based?</h2>
             <p class="step-hint">City/state where applicable, plus country so global comparisons stay useful.</p>
             <div class="location-inputs">
@@ -256,25 +252,23 @@
             </div>
             <div class="step-actions">
               <button class="btn-secondary step-skip" @click="skip">Prefer not to share</button>
-              <button class="btn-primary step-next" @click="next">Next →</button>
+              <button class="btn-primary step-next" @click="next">Next</button>
             </div>
           </template>
 
           <!-- STEP 5: Experience -->
           <template v-else-if="step === 5">
-            <div class="step-emoji">⏰</div>
             <h2 class="step-question">How many years of experience do you have?</h2>
             <p class="step-hint">Use total years in this field.</p>
             <input v-model.number="form.years_experience" type="number" class="step-input" placeholder="5" min="0" max="50" autofocus @keyup.enter="next" />
             <div class="step-actions">
               <button class="btn-secondary step-skip" @click="skip">Prefer not to share</button>
-              <button class="btn-primary step-next" @click="next">Next →</button>
+              <button class="btn-primary step-next" @click="next">Next</button>
             </div>
           </template>
 
           <!-- STEP 6: Education -->
           <template v-else-if="step === 6">
-            <div class="step-emoji">🎓</div>
             <h2 class="step-question">What is your education background?</h2>
             <p class="step-hint">Optional context for salary comparisons.</p>
             <div class="education-grid">
@@ -285,32 +279,28 @@
                 :class="{ selected: form.education === opt.value, dropout: opt.isDropout, 'edu-error': hasFieldError('education') }"
                 @click="selectEducation(opt); clearFieldError('education')"
               >
-                <span class="edu-icon">{{ opt.icon }}</span>
                 <span class="edu-label">{{ opt.label }}</span>
               </button>
             </div>
             <p v-if="hasFieldError('education')" class="field-error-msg">{{ fieldErrorMessage('education') }}</p>
             <div class="step-actions">
               <button class="btn-secondary step-skip" @click="skipEducation">Prefer not to share</button>
-              <button v-if="form.education" class="btn-primary step-next" @click="next">Next →</button>
+              <button v-if="form.education" class="btn-primary step-next" @click="next">Next</button>
             </div>
           </template>
 
           <!-- STEP 7: Debt / Tuition (conditional on education type) -->
           <template v-else-if="step === 7">
             <template v-if="form.is_dropout">
-              <div class="step-emoji">💸</div>
               <h2 class="step-question">How much debt did you leave with?</h2>
               <p class="step-hint">Optional. Enter your remaining education-related debt.</p>
             </template>
             <template v-else-if="isGeneralDebt">
-              <div class="step-emoji">💸</div>
               <h2 class="step-question">How much debt are you in?</h2>
               <p class="step-hint">Optional. Include debt you want considered in your context.</p>
             </template>
             <template v-else>
-              <div class="step-emoji">🎓💰</div>
-              <h2 class="step-question">How much did all that school cost?</h2>
+              <h2 class="step-question">How much did school cost?</h2>
               <p class="step-hint">Optional. Include tuition and related costs.</p>
             </template>
             <div class="salary-input-wrap">
@@ -319,13 +309,12 @@
             </div>
             <div class="step-actions">
               <button class="btn-secondary step-skip" @click="skip">{{ form.is_dropout ? "Prefer not to share" : isGeneralDebt ? "No debt" : "Prefer not to share" }}</button>
-              <button class="btn-primary step-next" @click="next">Next →</button>
+              <button class="btn-primary step-next" @click="next">Next</button>
             </div>
           </template>
 
           <!-- STEP 8: Car -->
           <template v-else-if="step === 8">
-            <div class="step-emoji">🚗</div>
             <h2 class="step-question">What do you drive?</h2>
             <p class="step-hint">Optional context field.</p>
             <div class="field-stack">
@@ -347,13 +336,12 @@
             </div>
             <div class="step-actions">
               <button class="btn-secondary step-skip" @click="skip">Public transport / none</button>
-              <button class="btn-primary step-next" @click="next">Next →</button>
+              <button class="btn-primary step-next" @click="next">Next</button>
             </div>
           </template>
 
           <!-- STEP 9: Salary History -->
           <template v-else-if="step === 9">
-            <div class="step-emoji">📈</div>
             <h2 class="step-question">Would you like to add salary history?</h2>
             <p class="step-hint">Optional, but helpful for progression context.</p>
 
@@ -454,33 +442,29 @@
 
             <div class="step-actions">
               <button class="btn-secondary step-skip" @click="form.salary_history = []; skip()">Skip</button>
-              <button class="btn-primary step-next" @click="next">Next →</button>
+              <button class="btn-primary step-next" @click="next">Next</button>
             </div>
           </template>
 
           <!-- STEP 10: Anonymize -->
           <template v-else-if="step === 10">
-            <div class="step-emoji">🔒</div>
             <h2 class="step-question">Do you want salary anonymization?</h2>
             <p class="step-hint">We can randomly add or subtract $1–2k before storage to reduce identifiability.</p>
             <div class="anonymize-options">
               <button class="anon-option" :class="{ selected: anonChoice === 'yes' }" @click="anonChoice = 'yes'; form.is_anonymized = true">
-                <span class="anon-icon">🔒</span>
                 <span class="anon-title">Yes, anonymize</span>
                 <span class="anon-desc">Adds a small randomized offset</span>
               </button>
               <button class="anon-option" :class="{ selected: anonChoice === 'no' }" @click="anonChoice = 'no'; form.is_anonymized = false">
-                <span class="anon-icon">🎯</span>
                 <span class="anon-title">No, keep exact number</span>
                 <span class="anon-desc">Stores the value as entered</span>
               </button>
             </div>
-            <button class="btn-primary step-next" @click="next" :disabled="!anonChoice">Next →</button>
+            <button class="btn-primary step-next" @click="next" :disabled="!anonChoice">Next</button>
           </template>
 
           <!-- STEP 11: Review + Submit -->
           <template v-else-if="step === 11">
-            <div class="step-emoji">{{ isEditing ? '✅' : '💣' }}</div>
             <h2 class="step-question">{{ isEditing ? 'Review your changes' : 'Review before submitting' }}</h2>
             <p class="step-hint">Please confirm the details below.</p>
 
@@ -582,13 +566,13 @@
               </div>
             </div>
 
-            <button class="btn-primary submit-btn" @click="submitSalary" :disabled="submitting">{{ submitting ? (isEditing ? 'UPDATING...' : 'SPILLING THE TEA...') : (isEditing ? 'UPDATE MY SALARY ✅' : 'SPILL THE TEA ☕') }}</button>
+            <button class="btn-primary submit-btn" @click="submitSalary" :disabled="submitting">{{ submitting ? (isEditing ? 'Updating…' : 'Submitting…') : (isEditing ? 'Update my salary' : 'Submit salary') }}</button>
             <p v-if="error && !hasAnyFieldErrors" class="error-msg">{{ error }}</p>
           </template>
 
         </div>
       </Transition>
-      <button v-if="step > 1 && step <= totalSteps" class="back-btn" @click="goBack">← Back</button>
+      <button v-if="step > 1 && step <= totalSteps" class="back-btn" @click="goBack">Back</button>
     </div>
   </div>
 </template>
@@ -766,15 +750,15 @@ const form = reactive({
 })
 
 const educationOptions = [
-  { value: 'High School', label: 'High School', icon: '🏫', isDropout: false },
-  { value: 'Some College', label: 'Some College', icon: '📚', isDropout: false },
-  { value: 'College Dropout', label: 'College Dropout', icon: '🎓🔥', isDropout: true },
-  { value: "Bachelor's", label: "Bachelor's", icon: '🎓', isDropout: false },
-  { value: "Master's", label: "Master's", icon: '📜', isDropout: false },
-  { value: 'PhD', label: 'PhD', icon: '🧪', isDropout: false },
-  { value: 'Self-taught', label: 'Self-taught', icon: '💻', isDropout: false },
-  { value: 'Bootcamp', label: 'Bootcamp', icon: '🏋️', isDropout: false },
-  { value: 'Trade School', label: 'Trade School', icon: '🔧', isDropout: false },
+  { value: 'High School', label: 'High School', isDropout: false },
+  { value: 'Some College', label: 'Some College', isDropout: false },
+  { value: 'College Dropout', label: 'College Dropout', isDropout: true },
+  { value: "Bachelor's", label: "Bachelor's", isDropout: false },
+  { value: "Master's", label: "Master's", isDropout: false },
+  { value: 'PhD', label: 'PhD', isDropout: false },
+  { value: 'Self-taught', label: 'Self-taught', isDropout: false },
+  { value: 'Bootcamp', label: 'Bootcamp', isDropout: false },
+  { value: 'Trade School', label: 'Trade School', isDropout: false },
 ]
 
 // Education options where we ask about general debt instead of tuition
@@ -1143,7 +1127,6 @@ async function submitSalary() {
 .progress-bar { height: 100%; background: var(--green-600); transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 0 2px 2px 0; }
 .flow-inner { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; max-width: 600px; margin: 0 auto; padding: 3rem 1.5rem 5rem; width: 100%; position: relative; }
 .step { width: 100%; text-align: center; }
-.step-emoji { font-size: 3.5rem; margin-bottom: 1.5rem; }
 .step-question { font-family: var(--font-display); font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 700; color: var(--gray-900); margin-bottom: 0.75rem; line-height: 1.2; }
 .step-hint { font-size: 1rem; color: var(--gray-500); margin-bottom: 2rem; line-height: 1.6; max-width: 480px; margin-left: auto; margin-right: auto; }
 .step-input { width: 100%; padding: 1rem 1.25rem; border: 2px solid var(--gray-200); border-radius: var(--radius-lg); font-family: var(--font-body); font-size: 1.15rem; color: var(--gray-900); background: var(--white); outline: none; transition: border-color 0.2s; text-align: center; }
@@ -1282,14 +1265,12 @@ async function submitSalary() {
 .edu-option:hover { border-color: var(--green-300); background: var(--green-50); }
 .edu-option.selected { border-color: var(--green-500); background: var(--green-50); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); }
 .edu-option.dropout.selected { border-color: var(--green-600); background: var(--green-100); }
-.edu-icon { font-size: 1.5rem; }
-.edu-label { font-size: 0.8rem; font-weight: 600; color: var(--gray-700); }
+.edu-label { font-size: 0.85rem; font-weight: 600; color: var(--gray-700); }
 
 .anonymize-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
 .anon-option { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.5rem 1rem; background: var(--white); border: 2px solid var(--gray-200); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.2s; }
 .anon-option:hover { border-color: var(--green-300); }
 .anon-option.selected { border-color: var(--green-500); background: var(--green-50); box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); }
-.anon-icon { font-size: 2rem; }
 .anon-title { font-family: var(--font-display); font-weight: 600; font-size: 1rem; color: var(--gray-900); }
 .anon-desc { font-size: 0.8rem; color: var(--gray-500); }
 

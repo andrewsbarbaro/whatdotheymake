@@ -1,134 +1,104 @@
 <template>
   <section class="hero">
+    <!-- Full-bleed live map backdrop -->
+    <div class="hero-map-bg" aria-hidden="true">
+      <ClientOnly>
+        <WorldSalaryMap embedded backdrop />
+        <template #fallback>
+          <div class="hero-map-bg-fallback" />
+        </template>
+      </ClientOnly>
+    </div>
+    <div class="hero-scrim" aria-hidden="true" />
+
+    <!-- Live ticker of real recent salaries -->
+    <div v-if="tickerItems.length" class="ticker" aria-hidden="true">
+      <span class="ticker-live"><span class="live-dot" />Live feed</span>
+      <div class="ticker-viewport">
+        <div class="ticker-track">
+          <span v-for="(s, i) in tickerLoop" :key="i" class="ticker-chip">
+            <span class="ticker-pay">{{ compactPay(s) }}</span>
+            <span class="ticker-role">{{ s.job_title }}</span>
+            <span v-if="locLabel(s)" class="ticker-loc">{{ locLabel(s) }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating content -->
     <div class="hero-inner">
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <div class="hero-kicker" aria-hidden="true">
-            <span class="kicker-pill">No accounts</span>
-            <span class="kicker-pill">No ads</span>
-            <span class="kicker-pill">No paywalls</span>
-          </div>
+      <div class="hero-panel">
+        <h1 class="hero-title">
+          What do they
+          <span class="hero-highlight">actually</span>
+          make?
+        </h1>
 
-          <h1 class="hero-title">
-            What Do They
-            <span class="hero-highlight">Actually</span>
-            Make?
-          </h1>
+        <p class="hero-sub">
+          Real salaries from real people, shared anonymously.
+          No login walls, no ads, no paywalls — just the numbers.
+        </p>
 
-          <p class="hero-sub">
-            Real salaries from real people. No login walls.
-            No ads. No paywalls. No "create an account to unlock 3 results" nonsense.
-          </p>
-
-
-          <div class="hero-actions">
-            <NuxtLink to="/submit" class="btn-primary hero-cta">
-              Drop Your Salary (30 sec) →
-            </NuxtLink>
-            <NuxtLink to="/feed" class="hero-scroll">
-              or just doom scroll and judge people ↓
-            </NuxtLink>
-          </div>
-
-
-          <div class="manifesto">
-            <div class="manifesto-title">
-              <span class="manifesto-stamp" aria-hidden="true">UNPAYWALLED</span>
-              <span class="manifesto-heading">Transparency pledge</span>
-            </div>
-
-            <p>
-              We built this because salary transparency shouldn't require a blood sample.
-              Unlike <em>other sites</em>, we don't need your email, your resume,
-              your work history, or a 500-word review just to see a number.
-            </p>
-            <p class="manifesto-bold">
-              Every submission is anonymous. We don't run ad/analytics trackers.
-              No ads. No paywalls. Ever.
-              We don't even have a users table because there are no accounts.
-              Just salaries. Raw, unfiltered, unaveraged.
-            </p>
-            <p class="manifesto-open-source">
-              This project is open source — our privacy/product claims are auditable:
-              <a
-                href="https://github.com/andrewsbarbaro/whatdotheymake"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="manifesto-link"
-              >github.com/andrewsbarbaro/whatdotheymake</a>
-            </p>
-          </div>
+        <div class="hero-actions">
+          <NuxtLink to="/submit" class="btn-primary hero-cta">
+            Drop your salary now
+          </NuxtLink>
+          <NuxtLink to="/feed" class="hero-scroll">
+            or browse the feed
+          </NuxtLink>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-          <div class="visual-stack">
-            <div class="receipt">
-              <div class="receipt-top">
-                <div class="receipt-brand">
-                  <span class="receipt-logo">WDTAM</span>
-                  <span class="receipt-title">Salary receipt</span>
-                </div>
-                <span class="receipt-stamp">NO SIGNUP</span>
-              </div>
-
-              <div class="receipt-lines">
-                <div class="receipt-line">
-                  <span class="rl-left">Software Engineer</span>
-                  <span class="rl-right">$162k</span>
-                </div>
-                <div class="receipt-line">
-                  <span class="rl-left">Product Manager</span>
-                  <span class="rl-right">$145k</span>
-                </div>
-                <div class="receipt-line">
-                  <span class="rl-left">Nurse (RN)</span>
-                  <span class="rl-right">$98k</span>
-                </div>
-                <div class="receipt-line muted">
-                  <span class="rl-left">…and</span>
-                  <span class="rl-right">
-                    <span class="big">{{ formatNum(totalSubmissions) }}</span>
-                    <span class="small">more</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="receipt-footer">
-                Live feed. Anonymous drops. Zero gatekeeping.
-              </div>
-            </div>
-
-            <div class="sticky-note">
-              <div class="sticky-title">0 cookies</div>
-              <div class="sticky-sub">0 pixels</div>
-            </div>
-
-            <div class="mini-card">
-              <div class="mini-title">Browse first.</div>
-              <div class="mini-sub">Submit when you're ready.</div>
-            </div>
-          </div>
-        </div>
-
+        <p class="hero-pledge">
+          Every submission is anonymous — no email, no accounts, no trackers, no
+          ads, ever.
+          <a
+            href="https://github.com/andrewsbarbaro/whatdotheymake"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hero-pledge-link"
+          >Open source</a>
+          and fully auditable.
+        </p>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-type SalaryCountResponse = {
-  pagination?: {
-    total?: number
-  }
+type TickerSalary = {
+  job_title: string
+  salary: number
+  pay_type?: string
+  currency_code?: string
+  city?: string
+  country?: string
 }
 
-const { data } = await useFetch<SalaryCountResponse>('/api/salaries', {
-  params: { page: '1', limit: '1' },
-})
-const totalSubmissions = computed(() => Number(data.value?.pagination?.total || 0))
+type SalariesResponse = {
+  salaries?: TickerSalary[]
+  pagination?: { total?: number }
+}
 
-function formatNum(n: number) {
-  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+const { data } = await useFetch<SalariesResponse>('/api/salaries', {
+  params: { page: '1', limit: '24' },
+})
+
+const tickerItems = computed<TickerSalary[]>(() =>
+  (data.value?.salaries || []).filter(s => s && s.job_title && Number(s.salary) > 0)
+)
+
+// Duplicate the list so the marquee can loop seamlessly.
+const tickerLoop = computed(() => [...tickerItems.value, ...tickerItems.value])
+
+function compactPay(s: TickerSalary) {
+  const code = String(s.currency_code || 'USD').toUpperCase()
+  const annual = Number(s.salary || 0)
+  const k = annual >= 1000 ? `${Math.round(annual / 1000)}k` : `${annual}`
+  return code === 'USD' ? `$${k}` : `${k} ${code}`
+}
+
+function locLabel(s: TickerSalary) {
+  return s.city || s.country || ''
 }
 </script>
 
@@ -136,99 +106,196 @@ function formatNum(n: number) {
 .hero {
   position: relative;
   overflow: hidden;
-  padding: 5.25rem 1.5rem 3.25rem;
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  background: #0b3d2e;
 }
 
-.hero::before {
-  content: '';
+/* Live map backdrop */
+.hero-map-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-map-bg-fallback {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(900px 500px at 15% 10%, rgba(34, 197, 94, 0.14), transparent 60%),
-    radial-gradient(700px 450px at 85% 15%, rgba(22, 163, 74, 0.12), transparent 55%),
-    linear-gradient(180deg, var(--green-50) 0%, var(--off-white) 70%);
-  z-index: 0;
+    radial-gradient(700px 400px at 30% 25%, rgba(34, 197, 94, 0.22), transparent 60%),
+    linear-gradient(160deg, #0d4a37 0%, #082a20 100%);
 }
 
-.hero::after {
-  content: '';
+.hero-map-bg :deep(.world-map-section),
+.hero-map-bg :deep(.world-map-inner),
+.hero-map-bg :deep(.world-map) {
+  height: 100%;
+  min-height: 100%;
+}
+
+/* Darken/tint the map so the glass panel reads clearly */
+.hero-scrim {
   position: absolute;
-  inset: -1px;
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      rgba(22, 163, 74, 0.06) 0,
-      rgba(22, 163, 74, 0.06) 1px,
-      transparent 1px,
-      transparent 28px
-    ),
-    repeating-linear-gradient(
-      0deg,
-      rgba(22, 163, 74, 0.05) 0,
-      rgba(22, 163, 74, 0.05) 1px,
-      transparent 1px,
-      transparent 28px
-    );
-  opacity: 0.55;
-  z-index: 0;
-  mask-image: radial-gradient(closest-side at 50% 15%, black 40%, transparent 100%);
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 520px at 50% 52%, rgba(8, 30, 22, 0.4), transparent 72%),
+    linear-gradient(180deg, rgba(6, 26, 19, 0.42) 0%, rgba(6, 26, 19, 0.22) 45%, rgba(6, 26, 19, 0.5) 100%);
+}
+
+/* Ticker */
+.ticker {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 26, 19, 0.55);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+
+.ticker-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0 1rem;
+  background: var(--green-600);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ticker-live .live-dot {
+  background: #fff;
+}
+
+.ticker-viewport {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+.ticker-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 0.55rem 1.75rem;
+  white-space: nowrap;
+  animation: ticker-scroll 55s linear infinite;
+  will-change: transform;
+}
+
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+}
+
+.ticker-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.ticker-pay {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--green-300, #86efac);
+}
+
+.ticker-role {
+  font-weight: 650;
+  color: #fff;
+}
+
+.ticker-loc {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ticker-loc::before {
+  content: '· ';
+}
+
+/* Floating content */
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem 3rem;
   pointer-events: none;
 }
 
-.hero-inner {
-  position: relative;
-  z-index: 1;
-  max-width: 1100px;
-  margin: 0 auto;
+.hero-panel {
+  pointer-events: auto;
+  width: min(620px, 100%);
+  text-align: center;
+  padding: 2.25rem 2.25rem 2rem;
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(160deg, rgba(16, 54, 41, 0.66) 0%, rgba(7, 28, 21, 0.74) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 24px 70px rgba(3, 18, 13, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
 }
 
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 3rem;
-  align-items: center;
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-500);
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  animation: live-pulse 2s ease-out infinite;
 }
 
-.hero-copy {
-  text-align: left;
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
-.hero-kicker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.kicker-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: var(--radius-full);
-  background: rgba(22, 163, 74, 0.08);
-  border: 1px solid rgba(22, 163, 74, 0.22);
-  color: var(--green-700);
-  font-weight: 700;
-  font-size: 0.85rem;
-  letter-spacing: 0.2px;
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
 }
 
 .hero-title {
   font-family: var(--font-display);
-  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  font-size: clamp(2.3rem, 5vw, 3.6rem);
   font-weight: 750;
-  color: var(--gray-900);
-  line-height: 1.02;
-  margin-bottom: 1.15rem;
+  color: #fff;
+  line-height: 1.05;
+  margin-bottom: 0.9rem;
 }
 
 .hero-highlight {
   position: relative;
   display: inline-block;
-  padding: 0 0.15em;
-  color: var(--gray-900);
+  padding: 0 0.1em;
+  color: #bbf7d0;
   z-index: 0;
 }
 
@@ -238,59 +305,25 @@ function formatNum(n: number) {
   left: -2%;
   right: -2%;
   bottom: 0.08em;
-  height: 0.32em;
-  background: linear-gradient(90deg, var(--green-200), rgba(34, 197, 94, 0.05));
+  height: 0.28em;
+  background: rgba(34, 197, 94, 0.45);
   border-radius: var(--radius-full);
-  transform: rotate(-1.5deg);
   z-index: -1;
 }
 
-.hero-highlight::after {
-  content: '';
-  position: absolute;
-  left: -1%;
-  right: -1%;
-  top: -0.12em;
-  bottom: -0.12em;
-  border: 2px solid rgba(22, 163, 74, 0.25);
-  border-radius: 18px;
-  transform: rotate(0.9deg);
-  z-index: -2;
-}
-
 .hero-sub {
-  font-size: 1.12rem;
-  color: var(--gray-600);
-  max-width: 42rem;
-  line-height: 1.75;
-  margin-bottom: 0.6rem;
-}
-
-.hero-roast {
   font-size: 1.05rem;
-  color: var(--green-700);
-  font-style: italic;
-  font-weight: 600;
-  margin-bottom: 1.65rem;
-}
-
-.roast-name {
-  font-weight: 800;
-}
-
-.roast-cough {
-  font-size: 0.85rem;
-  color: var(--gray-500);
-  font-weight: 500;
-  margin-left: 0.25rem;
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.65;
+  margin: 0 auto 1.4rem;
+  max-width: 34rem;
 }
 
 .hero-actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.9rem;
-  margin-bottom: 1.75rem;
+  align-items: center;
+  gap: 0.7rem;
 }
 
 .hero-cta {
@@ -299,355 +332,50 @@ function formatNum(n: number) {
 }
 
 .hero-scroll {
-  color: var(--gray-500);
+  color: rgba(255, 255, 255, 0.72);
   font-size: 0.9rem;
   transition: color 0.2s;
 }
 
 .hero-scroll:hover {
-  color: var(--green-700);
+  color: #bbf7d0;
 }
 
-
-.manifesto {
-  background: var(--white);
-  background: color-mix(in srgb, var(--white) 78%, transparent);
-  border: 2px solid var(--green-100);
-  border: 2px solid color-mix(in srgb, var(--green-600) 18%, transparent);
-  border-radius: var(--radius-xl);
-  padding: 1.25rem 1.5rem;
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm);
-  max-width: 44rem;
+.hero-pledge {
+  margin: 1.25rem auto 0;
+  max-width: 32rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.66);
 }
 
-.manifesto-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.manifesto-stamp {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  padding: 0 10px;
-  border-radius: var(--radius-full);
-  border: 2px dashed rgba(22, 163, 74, 0.4);
-  color: var(--green-700);
-  background: rgba(22, 163, 74, 0.08);
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  transform: rotate(-2deg);
-}
-
-.manifesto-heading {
-  font-family: var(--font-display);
-  font-weight: 800;
-  color: var(--gray-900);
-}
-
-.manifesto p {
-  font-size: 0.95rem;
-  color: var(--gray-700);
-  line-height: 1.7;
-  margin-bottom: 0.75rem;
-}
-
-.manifesto p:last-child {
-  margin-bottom: 0;
-}
-
-.manifesto em {
-  color: var(--green-700);
-  font-weight: 600;
-}
-
-.manifesto-bold {
-  font-weight: 750;
-  color: var(--gray-900) !important;
-}
-
-.manifesto-open-source {
-  margin-top: 0.25rem;
-  font-size: 0.92rem;
-  color: var(--gray-700);
-}
-
-.manifesto-link {
-  color: var(--green-700);
+.hero-pledge-link {
+  color: #bbf7d0;
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.manifesto-link:hover {
-  color: var(--green-800);
-}
-
-.hero-visual {
-  display: flex;
-  justify-content: center;
-}
-
-.visual-stack {
-  position: relative;
-  width: min(380px, 100%);
-  min-height: 360px;
-  animation: floaty 9s ease-in-out infinite;
-}
-
-@keyframes floaty {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .visual-stack { animation: none; }
-}
-
-.receipt {
-  position: relative;
-  background: var(--white);
-  border: 2px solid var(--gray-200);
-  border: 2px solid color-mix(in srgb, var(--gray-900) 10%, transparent);
-  border-radius: var(--radius-xl);
-  padding: 1.25rem 1.25rem 1rem;
-  box-shadow: var(--shadow-lg);
-  transform: rotate(1.25deg);
-}
-
-.receipt::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -8px;
-  height: 16px;
-  background:
-    radial-gradient(circle at 8px 0, transparent 7px, var(--off-white) 7.5px) 0 0/16px 16px repeat-x;
-  opacity: 0.9;
-}
-
-.receipt-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.receipt-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.receipt-logo {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 0.95rem;
-  letter-spacing: 0.08em;
-  color: var(--gray-900);
-}
-
-.receipt-title {
-  color: var(--gray-600);
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-
-.receipt-stamp {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: var(--radius-full);
-  border: 2px solid rgba(22, 163, 74, 0.28);
-  color: var(--green-700);
-  background: rgba(22, 163, 74, 0.07);
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  transform: rotate(-7deg);
-}
-
-.receipt-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.receipt-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px dashed var(--gray-200);
-  border-bottom: 1px dashed color-mix(in srgb, var(--gray-900) 16%, transparent);
-}
-
-.receipt-line:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.rl-left {
-  color: var(--gray-800);
-  font-weight: 750;
-}
-
-.rl-right {
-  font-family: var(--font-display);
-  color: var(--green-700);
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.receipt-line.muted .rl-left {
-  color: var(--gray-500);
-  font-weight: 700;
-}
-
-.receipt-line.muted .rl-right {
-  color: var(--gray-700);
-  font-weight: 900;
-}
-
-.rl-right .big {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-}
-
-.rl-right .small {
-  margin-left: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--gray-500);
-  font-weight: 700;
-}
-
-.receipt-footer {
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--gray-200);
-  border-top: 1px solid color-mix(in srgb, var(--gray-900) 12%, transparent);
-  color: var(--gray-600);
-  font-size: 0.88rem;
-  font-weight: 650;
-}
-
-.sticky-note {
-  position: absolute;
-  right: -6px;
-  top: 22px;
-  width: 140px;
-  padding: 0.85rem 0.9rem;
-  background: var(--white);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--white) 92%, transparent),
-    color-mix(in srgb, var(--green-50) 86%, transparent)
-  );
-  border: 2px solid var(--green-100);
-  border: 2px solid color-mix(in srgb, var(--green-600) 18%, transparent);
-  border-radius: 18px;
-  box-shadow: var(--shadow-md);
-  transform: rotate(6deg);
-}
-
-.sticky-title {
-  font-family: var(--font-display);
-  font-weight: 900;
-  color: var(--gray-900);
-  font-size: 1rem;
-  margin-bottom: 0.15rem;
-}
-
-.sticky-sub {
-  color: var(--gray-600);
-  font-weight: 750;
-  font-size: 0.9rem;
-}
-
-.mini-card {
-  position: absolute;
-  left: -10px;
-  bottom: -6px;
-  width: 190px;
-  padding: 0.9rem 1rem;
-  background: var(--white);
-  background: color-mix(in srgb, var(--white) 82%, transparent);
-  border: 2px solid var(--gray-200);
-  border: 2px solid color-mix(in srgb, var(--gray-900) 10%, transparent);
-  border-radius: 18px;
-  box-shadow: var(--shadow-md);
-  transform: rotate(-5deg);
-}
-
-.mini-title {
-  font-family: var(--font-display);
-  font-weight: 900;
-  color: var(--gray-900);
-  margin-bottom: 0.2rem;
-}
-
-.mini-sub {
-  color: var(--gray-600);
-  font-weight: 650;
-  font-size: 0.92rem;
-}
-
-@media (max-width: 980px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 2.25rem;
-  }
-
-  .hero-copy {
-    text-align: center;
-  }
-
-  .hero-actions {
-    align-items: center;
-  }
-
-
-  .manifesto {
-    margin: 0 auto;
-    text-align: left;
-  }
-
-  .hero-visual {
-    padding-top: 0.25rem;
-  }
+.hero-pledge-link:hover {
+  color: #dcfce7;
 }
 
 @media (max-width: 640px) {
   .hero {
-    padding: 3.25rem 1rem 2.5rem;
+    min-height: 560px;
   }
 
-
-  .visual-stack {
-    width: min(360px, 100%);
-    min-height: 340px;
+  .hero-inner {
+    padding: 1.75rem 1rem 2.25rem;
   }
 
-  .sticky-note {
-    right: -2px;
-    top: 14px;
-    width: 135px;
+  .hero-panel {
+    padding: 1.75rem 1.25rem 1.5rem;
   }
 
-  .mini-card {
-    left: -2px;
-    width: 185px;
+  .ticker-live {
+    padding: 0 0.7rem;
+    font-size: 0.66rem;
   }
 }
 </style>

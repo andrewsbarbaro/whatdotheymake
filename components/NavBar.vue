@@ -6,10 +6,10 @@
       </NuxtLink>
       <div class="nav-links">
         <NuxtLink to="/feed" class="nav-link">Browse</NuxtLink>
-        <NuxtLink to="/affiliates" class="nav-link">Partners &amp; Affliates</NuxtLink>
+        <NuxtLink to="/affiliates" class="nav-link">Partners &amp; affiliates</NuxtLink>
         <NuxtLink to="/delete" class="nav-link">Manage</NuxtLink>
         <NuxtLink to="/feedback" class="nav-link">Feedback</NuxtLink>
-        <NuxtLink to="/submit" class="nav-cta btn-primary">Spill Your Salary →</NuxtLink>
+        <NuxtLink to="/submit" class="nav-cta btn-primary">Share your salary</NuxtLink>
       </div>
       <div class="mobile-nav-controls">
         <NuxtLink to="/submit" class="mobile-submit btn-primary">Submit</NuxtLink>
@@ -26,10 +26,10 @@
     </div>
     <div v-if="menuOpen" id="mobile-nav-panel" class="mobile-nav-panel container">
       <NuxtLink to="/feed" class="mobile-nav-link" @click="menuOpen = false">Browse</NuxtLink>
-      <NuxtLink to="/affiliates" class="mobile-nav-link" @click="menuOpen = false">Partners &amp; Affliates</NuxtLink>
+      <NuxtLink to="/affiliates" class="mobile-nav-link" @click="menuOpen = false">Partners &amp; affiliates</NuxtLink>
       <NuxtLink to="/delete" class="mobile-nav-link" @click="menuOpen = false">Manage</NuxtLink>
       <NuxtLink to="/feedback" class="mobile-nav-link" @click="menuOpen = false">Feedback</NuxtLink>
-      <NuxtLink to="/submit" class="mobile-nav-cta btn-primary" @click="menuOpen = false">Spill Your Salary →</NuxtLink>
+      <NuxtLink to="/submit" class="mobile-nav-cta btn-primary" @click="menuOpen = false">Share your salary</NuxtLink>
     </div>
   </nav>
 </template>

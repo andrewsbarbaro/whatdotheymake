@@ -9,7 +9,7 @@
             <div class="count-number">{{ formatNum(totalSubmissions) }}</div>
           </template>
         </ClientOnly>
-        <div class="count-label">salaries exposed</div>
+        <div class="count-label">salaries shared</div>
       </div>
     </div>
   </section>

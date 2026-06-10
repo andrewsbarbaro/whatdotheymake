@@ -22,13 +22,13 @@
           rel="noopener noreferrer"
           class="footer-btn donate-btn"
         >
-          Buy us a coffee ☕
+          Buy us a coffee
         </a>
         <NuxtLink to="/submit" class="footer-btn">Submit Your Salary</NuxtLink>
         <NuxtLink to="/feed" class="footer-btn">Browse Salaries</NuxtLink>
         <NuxtLink to="/delete" class="footer-btn">Manage My Data</NuxtLink>
         <NuxtLink to="/feedback" class="footer-btn">Leave Feedback</NuxtLink>
-        <NuxtLink to="/affiliates" class="footer-btn">Partners &amp; Affliates</NuxtLink>
+        <NuxtLink to="/affiliates" class="footer-btn">Partners &amp; affiliates</NuxtLink>
         <NuxtLink to="/privacy" class="footer-btn">Privacy Policy</NuxtLink>
         <NuxtLink to="/tos" class="footer-btn">Terms of Service</NuxtLink>
         <a href="/llms.txt" class="footer-btn">AI / LLMs</a>
@@ -56,9 +56,6 @@
       </div>
 
       <div class="footer-social" aria-label="What Do They Make social links">
-        <a href="https://x.com/whatdotheymake" target="_blank" rel="noopener" class="social-link" aria-label="What Do They Make on X">
-          <span class="social-text">X</span>
-        </a>
         <a href="https://www.linkedin.com/company/whatdotheymake" target="_blank" rel="noopener" class="social-link" aria-label="What Do They Make on LinkedIn">
           <span class="social-text">in</span>
         </a>
