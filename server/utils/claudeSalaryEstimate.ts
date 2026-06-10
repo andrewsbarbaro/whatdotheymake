@@ -85,19 +85,28 @@ function normalizeEstimate(raw: any): SalaryEstimate | null {
 }
 
 function getAnthropicApiKey(event?: H3Event): string {
-  const config = useRuntimeConfig() as any
-  const runtimeValue = String(config.anthropicApiKey || '').trim()
-  if (runtimeValue) return runtimeValue
+  // Check Cloudflare runtime env first (for Workers/Pages)
   const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_ANTHROPIC_API_KEY || '').trim()
+  const cfValue = String(cf?.NUXT_ANTHROPIC_API_KEY || '').trim()
+  if (cfValue) return cfValue
+
+  // Fall back to build-time config
+  const config = useRuntimeConfig() as any
+  return String(config.anthropicApiKey || '').trim()
 }
 
 function getAnthropicBaseUrl(event?: H3Event): string {
+  // Check Cloudflare runtime env first (for Workers/Pages)
+  const cf = (event?.context as any)?.cloudflare?.env
+  const cfValue = String(cf?.NUXT_ANTHROPIC_BASE_URL || '').trim()
+  if (cfValue) return cfValue.replace(/\/+$/g, '')
+
+  // Fall back to build-time config
   const config = useRuntimeConfig() as any
   const runtimeValue = String(config.anthropicBaseUrl || '').trim()
   if (runtimeValue) return runtimeValue.replace(/\/+$/g, '')
-  const cf = (event?.context as any)?.cloudflare?.env
-  return String(cf?.NUXT_ANTHROPIC_BASE_URL || 'https://api.anthropic.com').trim().replace(/\/+$/g, '')
+
+  return 'https://api.anthropic.com'
 }
 
 function getAnthropicMessagesUrl(event?: H3Event): string {
