@@ -16,14 +16,6 @@
       </div>
 
       <div class="footer-links">
-        <a
-          href="https://donate.stripe.com/bJebJ17oof3e1Taeva2oE00"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="footer-btn donate-btn"
-        >
-          Buy us a coffee
-        </a>
         <NuxtLink to="/submit" class="footer-btn">Submit Your Salary</NuxtLink>
         <NuxtLink to="/feed" class="footer-btn">Browse Salaries</NuxtLink>
         <NuxtLink to="/delete" class="footer-btn">Manage My Data</NuxtLink>
@@ -137,20 +129,6 @@
   background: var(--footer-btn-hover-bg);
   color: var(--footer-btn-hover-text) !important;
   border-color: var(--footer-btn-hover-border);
-}
-
-.donate-btn {
-  background: linear-gradient(135deg, var(--green-600) 0%, var(--green-700) 100%);
-  border-color: transparent;
-  color: white !important;
-  box-shadow: var(--shadow-green);
-}
-
-.donate-btn:hover {
-  background: linear-gradient(135deg, var(--green-700) 0%, var(--green-800) 100%);
-  color: white !important;
-  border-color: transparent;
-  transform: translateY(-1px);
 }
 
 .footer-social {
