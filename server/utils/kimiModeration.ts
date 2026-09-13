@@ -173,7 +173,7 @@ function getKimiBaseUrl(event?: H3Event): string {
   const runtimeValue = String(config.kimiBaseUrl || '').trim()
   if (runtimeValue) return runtimeValue.replace(/\/+$/g, '')
 
-  return 'https://api.moonshot.cn'
+  return 'https://api.moonshot.ai'
 }
 
 function getKimiChatUrl(event?: H3Event): string {

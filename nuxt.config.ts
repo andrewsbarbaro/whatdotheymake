@@ -101,7 +101,7 @@ export default defineNuxtConfig({
 
     // Model names (server-only)
     // These are passed through to your LLM endpoint.
-    kimiBaseUrl: 'https://api.moonshot.cn',
+    kimiBaseUrl: 'https://api.moonshot.ai',
     kimiModel: 'kimi-k2.6',
     kimiModerationMaxTokens: 300,
     kimiModerationTimeoutMs: 8000,
