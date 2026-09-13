@@ -6,7 +6,7 @@ No accounts, no paywalls, no ad-tech tracking. Submit salary data, browse what o
 
 ## Stack
 
-Nuxt 3 on Cloudflare Workers with D1 for storage. Uses an Anthropic-compatible LLM proxy (we use [LiteLLM](https://github.com/BerriAI/litellm)) for content moderation and salary scoring.
+Nuxt 3 on Cloudflare Workers with D1 for storage. Uses an OpenAI-compatible LLM proxy (we use [LiteLLM](https://github.com/BerriAI/litellm) with Kimi.ai) for content moderation and salary scoring.
 
 ## Local dev
 
@@ -26,7 +26,7 @@ See `.env.example`. You need:
 - `NUXT_LLM_BASE_URL` - your LLM proxy endpoint
 - `NUXT_LLM_AUTOMOD_API_KEY` - for content moderation
 - `NUXT_LLM_SALARY_API_KEY` - for salary scoring
-- `NUXT_LLM_FAILOVER_API_KEY` - optional direct Anthropic fallback key if proxy requests fail
+- `NUXT_LLM_FAILOVER_API_KEY` - optional direct LLM fallback key if proxy requests fail
 
 ## Deploying
 
@@ -50,7 +50,7 @@ npm run deploy
 
 ## Privacy
 
-No accounts, no sessions, no ad pixels, no analytics scripts. Infrastructure providers may still process technical request data for security/reliability, and text fields are moderated through an Anthropic-compatible API. Submitted salaries can optionally be fuzzed by +/-$1-2k before storage. Edit/delete works via a management code the submitter keeps.
+No accounts, no sessions, no ad pixels, no analytics scripts. Infrastructure providers may still process technical request data for security/reliability, and text fields are moderated through an OpenAI-compatible API (Kimi.ai). Submitted salaries can optionally be fuzzed by +/-$1-2k before storage. Edit/delete works via a management code the submitter keeps.
 
 ## Product commitments
 

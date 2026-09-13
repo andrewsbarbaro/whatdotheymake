@@ -1,4 +1,4 @@
-import type { SalaryEstimate } from './claudeSalaryEstimate'
+import type { SalaryEstimate } from './kimiSalaryEstimate'
 
 export type UnderpaidScore = { score: number; tier: string; emoji: string }
 

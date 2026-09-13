@@ -1,6 +1,6 @@
 import { insertSalary, insertSalaryHistory, insertSubmissionAudit } from '../utils/storage'
-import { moderateTextFields } from '../utils/claudeModeration'
-import { estimateSalaryRange } from '../utils/claudeSalaryEstimate'
+import { moderateTextFields } from '../utils/kimiModeration'
+import { estimateSalaryRange } from '../utils/kimiSalaryEstimate'
 import { calculateUnderpaidScoreWithMarket, getSubmitMessage } from '../utils/salaryScoring'
 import { generateManagementToken, hashManagementToken } from '../utils/managementToken'
 import { normalizeSubmissionFields } from '../utils/endpoints/submissionFields'

@@ -1,5 +1,5 @@
 import { getSalaryByToken, updateSalaryByToken, deleteSalaryHistory, insertSalaryHistory, insertSubmissionAudit } from '../utils/storage'
-import { moderateTextFields } from '../utils/claudeModeration'
+import { moderateTextFields } from '../utils/kimiModeration'
 import { requireManagementToken } from '../utils/endpoints/managementCode'
 import { normalizeSubmissionFields } from '../utils/endpoints/submissionFields'
 

@@ -78,16 +78,17 @@ export default defineNuxtConfig({
     d1Database: '',
 
     // LLM routing (server-only)
-    // We call the Anthropic-compatible Messages endpoint on this host (e.g. a LiteLLM proxy).
+    // We call the OpenAI-compatible Chat Completions endpoint on this host (e.g. a LiteLLM proxy).
     llmBaseUrl: '',
 
     // API keys (server-only)
     // - llmAutomodApiKey: used for content moderation
     // - llmSalaryApiKey: used for salary scoring
-    // - llmFailoverApiKey: optional direct Anthropic fallback if proxy is unavailable
+    // - llmFailoverApiKey: optional direct LLM fallback if proxy is unavailable
     llmAutomodApiKey: '',
     llmSalaryApiKey: '',
     llmFailoverApiKey: '',
+    kimiApiKey: '',
     // Utility behavior knobs (server-only)
     currencyRatesTtlMs: 30 * 60 * 1000,
     currencyFetchTimeoutMs: 5000,
@@ -99,16 +100,16 @@ export default defineNuxtConfig({
 
 
     // Model names (server-only)
-    // These are passed through to your proxy.
-    anthropicBaseUrl: 'https://api.anthropic.com',
-    anthropicModel: 'claude-haiku-4-5',
-    anthropicModerationMaxTokens: 300,
-    anthropicModerationTimeoutMs: 8000,
+    // These are passed through to your LLM endpoint.
+    kimiBaseUrl: 'https://api.moonshot.cn',
+    kimiModel: 'kimi-k2.6',
+    kimiModerationMaxTokens: 300,
+    kimiModerationTimeoutMs: 8000,
 
-    // Claude salary estimation (server-only)
-    anthropicSalaryModel: '', // falls back to anthropicModel
-    anthropicSalaryMaxTokens: 350,
-    anthropicSalaryTimeoutMs: 8000,
+    // Kimi salary estimation (server-only)
+    kimiSalaryModel: '', // falls back to kimiModel
+    kimiSalaryMaxTokens: 350,
+    kimiSalaryTimeoutMs: 8000,
 
     // Public keys exposed to client
     public: {

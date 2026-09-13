@@ -23,7 +23,7 @@
           preferences).
         </li>
         <li>Cloudflare may process technical request data (like IP/user-agent) for security and reliability.</li>
-        <li>Some text fields are sent to Anthropic for moderation before submission is accepted.</li>
+        <li>Some text fields are sent to Kimi.ai for moderation before submission is accepted.</li>
         <li>Your salary submission is public — don’t include personal info.</li>
         <li>You can edit/delete your submission any time using your submission code at <code>/delete</code>.</li>
       </ul>
@@ -107,10 +107,10 @@
         receive your full card details.
       </p>
 
-      <h3>Anthropic (content moderation)</h3>
+      <h3>Kimi.ai (content moderation)</h3>
       <p>
         To reduce spam and keep submissions from containing harassment or personal data, some text fields are checked
-        using the Anthropic API before being accepted (for example job title, company, location fields, car, and
+        using the Kimi.ai API before being accepted (for example job title, company, location fields, car, and
         salary-history text fields). We do not send your numeric pay amount as part of this text-field moderation.
       </p>
 
