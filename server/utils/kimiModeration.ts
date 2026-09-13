@@ -147,23 +147,28 @@ function normalizeAssessment(input: any): ModerationAssessment {
 }
 
 function getKimiApiKey(event?: H3Event): string {
-  // Check Cloudflare runtime env first (for Workers/Pages)
+  // Cloudflare Workers/Pages runtime
   const cf = (event?.context as any)?.cloudflare?.env
   const cfValue = String(cf?.NUXT_KIMI_API_KEY || '').trim()
   if (cfValue) return cfValue
 
-  // Fall back to build-time config
+  // Cloudflare also injects secrets into process.env
+  const procValue = String((process as any).env?.NUXT_KIMI_API_KEY || '').trim()
+  if (procValue) return procValue
+
+  // Build-time config
   const config = useRuntimeConfig() as any
   return String(config.kimiApiKey || '').trim()
 }
 
 function getKimiBaseUrl(event?: H3Event): string {
-  // Check Cloudflare runtime env first (for Workers/Pages)
   const cf = (event?.context as any)?.cloudflare?.env
   const cfValue = String(cf?.NUXT_KIMI_BASE_URL || '').trim()
   if (cfValue) return cfValue.replace(/\/+$/g, '')
 
-  // Fall back to build-time config
+  const procValue = String((process as any).env?.NUXT_KIMI_BASE_URL || '').trim()
+  if (procValue) return procValue.replace(/\/+$/g, '')
+
   const config = useRuntimeConfig() as any
   const runtimeValue = String(config.kimiBaseUrl || '').trim()
   if (runtimeValue) return runtimeValue.replace(/\/+$/g, '')
@@ -236,9 +241,12 @@ async function callKimiModeration(prompt: string, event?: H3Event): Promise<Mode
     })
 
     if (!res.ok) {
+      let errorBody = ''
+      try { errorBody = await res.text() } catch { }
       throw createError({
         statusCode: 502,
         statusMessage: `Moderation request failed (${res.status}).`,
+        data: { upstreamError: errorBody.slice(0, 500) },
       })
     }
 

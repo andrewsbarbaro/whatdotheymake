@@ -83,6 +83,9 @@ function getKimiApiKey(event?: H3Event): string {
   const cfValue = String(cf?.NUXT_KIMI_API_KEY || '').trim()
   if (cfValue) return cfValue
 
+  const procValue = String((process as any).env?.NUXT_KIMI_API_KEY || '').trim()
+  if (procValue) return procValue
+
   const config = useRuntimeConfig() as any
   return String(config.kimiApiKey || '').trim()
 }
@@ -91,6 +94,9 @@ function getKimiBaseUrl(event?: H3Event): string {
   const cf = (event?.context as any)?.cloudflare?.env
   const cfValue = String(cf?.NUXT_KIMI_BASE_URL || '').trim()
   if (cfValue) return cfValue.replace(/\/+$/g, '')
+
+  const procValue = String((process as any).env?.NUXT_KIMI_BASE_URL || '').trim()
+  if (procValue) return procValue.replace(/\/+$/g, '')
 
   const config = useRuntimeConfig() as any
   const runtimeValue = String(config.kimiBaseUrl || '').trim()
@@ -253,9 +259,12 @@ async function callKimiSalaryEstimate(prompt: string, event?: H3Event): Promise<
     })
 
     if (!res.ok) {
+      let errorBody = ''
+      try { errorBody = await res.text() } catch { }
       throw createError({
         statusCode: 502,
         statusMessage: `Salary estimate request failed (${res.status}).`,
+        data: { upstreamError: errorBody.slice(0, 500) },
       })
     }
 
@@ -279,9 +288,12 @@ async function callKimiSalaryEstimate(prompt: string, event?: H3Event): Promise<
       })
 
       if (!res.ok) {
+        let errorBody = ''
+        try { errorBody = await res.text() } catch { }
         throw createError({
           statusCode: 502,
           statusMessage: 'Salary estimate correction request failed.',
+          data: { upstreamError: errorBody.slice(0, 500) },
         })
       }
 
