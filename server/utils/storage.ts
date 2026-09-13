@@ -1397,6 +1397,64 @@ export async function insertSubmissionAudit(event: H3Event, entry: SubmissionAud
   devSubmissionAudit.push(entry)
 }
 
+export async function getComparableSalaryStats(event: H3Event, opts: {
+  job_title: string
+  currency_code: string
+  country?: string | null
+  min_sample?: number
+}): Promise<{ low: number; median: number; high: number; count: number } | null> {
+  const { db } = getBindings(event)
+  const jobTitle = String(opts.job_title || '').trim().toLowerCase()
+  const currencyCode = String(opts.currency_code || '').trim().toUpperCase()
+  if (!jobTitle || !currencyCode) return null
+
+  const minSample = Math.max(3, Math.round(opts.min_sample || 5))
+
+  if (db) {
+    const rows = await db.prepare(`
+      SELECT salary, pay_type
+      FROM salaries
+      WHERE LOWER(job_title) = LOWER(?1)
+        AND currency_code = ?2
+        AND (report_count IS NULL OR report_count < ${REPORT_HIDE_THRESHOLD})
+      ORDER BY salary ASC
+    `).bind(opts.job_title, currencyCode).all()
+
+    const salaries: number[] = []
+    for (const r of (rows?.results || []) as any[]) {
+      const annual = toAnnualSalary(Number(r.salary || 0), r.pay_type)
+      if (Number.isFinite(annual) && annual > 0) salaries.push(annual)
+    }
+
+    if (salaries.length < minSample) return null
+
+    salaries.sort((a, b) => a - b)
+    const p25 = salaries[Math.floor(salaries.length * 0.25)]
+    const p50 = salaries[Math.floor(salaries.length * 0.5)]
+    const p75 = salaries[Math.floor(salaries.length * 0.75)]
+    return { low: Math.round(p25), median: Math.round(p50), high: Math.round(p75), count: salaries.length }
+  }
+
+  // Dev fallback
+  const salaries = devSalaries
+    .filter(r => {
+      if (Number(r.report_count || 0) >= REPORT_HIDE_THRESHOLD) return false
+      const title = String(r.job_title || '').trim().toLowerCase()
+      const currency = String(r.currency_code || '').trim().toUpperCase()
+      return title === jobTitle && currency === currencyCode
+    })
+    .map(r => toAnnualSalary(Number(r.salary || 0), r.pay_type))
+    .filter(s => Number.isFinite(s) && s > 0)
+    .sort((a, b) => a - b)
+
+  if (salaries.length < minSample) return null
+
+  const p25 = salaries[Math.floor(salaries.length * 0.25)]
+  const p50 = salaries[Math.floor(salaries.length * 0.5)]
+  const p75 = salaries[Math.floor(salaries.length * 0.75)]
+  return { low: Math.round(p25), median: Math.round(p50), high: Math.round(p75), count: salaries.length }
+}
+
 export async function getSubmissionAudit(event: H3Event, salaryId: string, limit = 20): Promise<SubmissionAuditEvent[]> {
   const { db } = getBindings(event)
 

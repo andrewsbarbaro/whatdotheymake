@@ -106,11 +106,6 @@ export default defineNuxtConfig({
     kimiModerationMaxTokens: 300,
     kimiModerationTimeoutMs: 15000,
 
-    // Kimi salary estimation (server-only)
-    kimiSalaryModel: '', // falls back to kimiModel
-    kimiSalaryMaxTokens: 350,
-    kimiSalaryTimeoutMs: 25000,
-
     // Public keys exposed to client
     public: {
       siteUrl: 'https://whatdotheymake.com'

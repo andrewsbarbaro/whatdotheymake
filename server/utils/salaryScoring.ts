@@ -1,5 +1,3 @@
-import type { SalaryEstimate } from './kimiSalaryEstimate'
-
 export type UnderpaidScore = { score: number; tier: string; emoji: string }
 
 function clamp(n: number, min: number, max: number) {
@@ -29,43 +27,38 @@ export function calculateUnderpaidScoreLegacy(salary: number, yearsExp?: number 
   return tierForScore(score)
 }
 
-export function calculateUnderpaidScoreWithMarket(opts: {
+export function calculateUnderpaidScoreFromDatabase(opts: {
   salary: number
   yearsExp?: number | null
-  estimate: SalaryEstimate
+  low: number
+  median: number
+  high: number
+  sampleCount: number
 }): UnderpaidScore {
-  const { salary, yearsExp, estimate } = opts
+  const { salary, yearsExp, low, median, high, sampleCount } = opts
 
-  const median = Number(estimate?.median || 0)
-  const low = Number(estimate?.low || 0)
-  const high = Number(estimate?.high || 0)
-  const confidence = clamp(Number(estimate?.confidence ?? 0.5), 0, 1)
-
-  // AI-only: this scorer requires a valid market estimate.
   if (!Number.isFinite(median) || median <= 0) {
-    throw new Error('Invalid market salary estimate (median)')
+    throw new Error('Invalid comparable salary median')
   }
 
-  // Ratio vs median.
+  // Derive confidence from sample size: more submissions = higher confidence.
+  // 3-4 samples = low confidence, 20+ = high confidence.
+  const confidence = clamp(Math.min(1, (sampleCount - 3) / 17), 0.3, 1)
+
   const ratio = salary / median
-  // Base: ratio=1 => 50, with a softer slope than before to reduce false positives.
   let score = 50 + (1 - ratio) * 55
 
-  // Small neutral zone around median.
+  // Neutral zone around median.
   if (ratio >= 0.92 && ratio <= 1.08) {
     score = 50 + (score - 50) * 0.35
   }
 
-  // If they're below the estimated p25, treat as underpaid only when model confidence is reasonable.
-  if (confidence >= 0.65 && low > 0 && salary < low * 0.92) score = Math.max(score, 72)
+  if (confidence >= 0.5 && low > 0 && salary < low * 0.92) score = Math.max(score, 72)
+  if (confidence >= 0.5 && high > 0 && salary > high * 1.2) score = Math.min(score, 28)
 
-  // If they're above the estimated p75 by a lot, treat as \"overpaid\" only with reasonable confidence.
-  if (confidence >= 0.65 && high > 0 && salary > high * 1.2) score = Math.min(score, 28)
-
-  // Experience adjustment (light): if you're very experienced and still below market, bump score.
   if (yearsExp && yearsExp >= 10 && ratio < 0.9) score += 8
   if (yearsExp && yearsExp >= 15 && ratio < 0.85) score += 6
-  // Pull low-confidence estimates toward neutral to avoid overconfident labels.
+
   const confidenceWeight = 0.35 + (0.65 * confidence)
   score = 50 + (score - 50) * confidenceWeight
 

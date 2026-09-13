@@ -1,7 +1,6 @@
-import { insertSalary, insertSalaryHistory, insertSubmissionAudit } from '../utils/storage'
+import { insertSalary, insertSalaryHistory, insertSubmissionAudit, getComparableSalaryStats } from '../utils/storage'
 import { moderateTextFields } from '../utils/kimiModeration'
-import { estimateSalaryRange } from '../utils/kimiSalaryEstimate'
-import { calculateUnderpaidScoreWithMarket, getSubmitMessage } from '../utils/salaryScoring'
+import { calculateUnderpaidScoreFromDatabase, getSubmitMessage } from '../utils/salaryScoring'
 import { generateManagementToken, hashManagementToken } from '../utils/managementToken'
 import { normalizeSubmissionFields } from '../utils/endpoints/submissionFields'
 
@@ -62,41 +61,25 @@ export default defineEventHandler(async (event) => {
   }
 
 
-  let marketEstimate: any = null
-  try {
+  const dbStats = await getComparableSalaryStats(event, {
+    job_title: row.job_title,
+    currency_code: row.currency_code,
+  })
 
-    marketEstimate = await estimateSalaryRange({
-      job_title: row.job_title,
-      city: row.city,
-      state: row.state,
-      country: row.country,
-      currency_code: row.currency_code,
-      years_experience: row.years_experience,
-      company: row.company,
-      level: row.level,
-      work_mode: row.work_mode,
-      pay_type: row.pay_type as 'salary' | 'hourly',
-      bonus_percent: row.bonus_percent,
-      equity_value: row.equity_value,
-      education: row.education,
-      is_dropout: Boolean(row.is_dropout),
-      education_debt: row.education_debt,
-    }, event)
-  } catch (err: any) {
-    throw createError({
-      statusCode: err?.statusCode || 502,
-      statusMessage: err?.statusMessage || 'Salary estimate failed. Try again.',
-    })
-  }
+  const underpaidScore = dbStats
+    ? calculateUnderpaidScoreFromDatabase({
+        salary: row.salary,
+        yearsExp: row.years_experience,
+        low: dbStats.low,
+        median: dbStats.median,
+        high: dbStats.high,
+        sampleCount: dbStats.count,
+      })
+    : calculateUnderpaidScoreLegacy(row.salary, row.years_experience)
 
-  if (!marketEstimate) {
-    throw createError({
-      statusCode: 502,
-      statusMessage: 'Salary estimate failed. Try again.',
-    })
-  }
-
-  const underpaidScore = calculateUnderpaidScoreWithMarket({ salary: row.salary, yearsExp: row.years_experience, estimate: marketEstimate })
+  const marketEstimate = dbStats
+    ? { low: dbStats.low, median: dbStats.median, high: dbStats.high, confidence: Math.min(1, (dbStats.count - 3) / 17) }
+    : undefined
 
   await insertSalary(event, row)
 
