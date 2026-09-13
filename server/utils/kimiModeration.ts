@@ -162,7 +162,7 @@ async function callKimiModeration(prompt: string, event?: H3Event): Promise<Mode
   const maxTokens = Number(config.kimiModerationMaxTokens || 300)
 
   const controller = new AbortController()
-  const timeoutMs = Number(config.kimiModerationTimeoutMs || 8000)
+  const timeoutMs = Number(config.kimiModerationTimeoutMs || 15000)
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
   const systemPrompt =

@@ -205,10 +205,7 @@ async function callKimiSalaryEstimate(prompt: string, event?: H3Event): Promise<
 
   const model = String(config.kimiSalaryModel || config.kimiModel || 'kimi-k2.6')
   const maxTokens = Number(config.kimiSalaryMaxTokens || 350)
-
-  const controller = new AbortController()
-  const timeoutMs = Number(config.kimiSalaryTimeoutMs || 8000)
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const timeoutMs = Number(config.kimiSalaryTimeoutMs || 25000)
 
   const systemPrompt =
     'You are a cautious compensation analyst. ' +
@@ -226,63 +223,67 @@ async function callKimiSalaryEstimate(prompt: string, event?: H3Event): Promise<
     ],
   }
 
-  try {
-    const url = getKimiChatUrl(event)
-    if (!url) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Kimi API URL is not configured.',
-      })
-    }
-
-    const headers: Record<string, string> = {
-      'content-type': 'application/json',
-      'authorization': `Bearer ${apiKey}`,
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
-      signal: controller.signal,
-    })
-
-    if (!res.ok) {
-      let errorBody = ''
-      try { errorBody = await res.text() } catch { }
-      throw createError({
-        statusCode: 502,
-        statusMessage: `Salary estimate request failed (${res.status}).`,
-        data: { upstreamError: errorBody.slice(0, 500) },
-      })
-    }
-
-    const data: any = await res.json()
-    const text = data?.choices?.[0]?.message?.content
-    if (!text || typeof text !== 'string') {
-      throw new Error('Salary estimate response missing content')
-    }
-
-    const parsed = parseJsonFromLlm(text)
-    const normalized = normalizeEstimate(parsed)
-    if (normalized) return normalized
-
-    throw new Error('Salary estimate response missing valid JSON output')
-  } catch (err: any) {
-    if (err?.statusCode) throw err
-    if (err?.name === 'AbortError') {
-      throw createError({
-        statusCode: 504,
-        statusMessage: 'Salary estimate request timed out.',
-      })
-    }
+  const url = getKimiChatUrl(event)
+  if (!url) {
     throw createError({
-      statusCode: 502,
-      statusMessage: 'Salary estimate failed. Try again.',
+      statusCode: 500,
+      statusMessage: 'Kimi API URL is not configured.',
     })
-  } finally {
-    clearTimeout(timeout)
   }
+
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    'authorization': `Bearer ${apiKey}`,
+  }
+
+  let lastErr: any
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      })
+
+      if (!res.ok) {
+        let errorBody = ''
+        try { errorBody = await res.text() } catch { }
+        throw createError({
+          statusCode: 502,
+          statusMessage: `Salary estimate request failed (${res.status}).`,
+          data: { upstreamError: errorBody.slice(0, 500) },
+        })
+      }
+
+      const data: any = await res.json()
+      const text = data?.choices?.[0]?.message?.content
+      if (!text || typeof text !== 'string') {
+        throw new Error('Salary estimate response missing content')
+      }
+
+      const parsed = parseJsonFromLlm(text)
+      const normalized = normalizeEstimate(parsed)
+      if (normalized) return normalized
+
+      throw new Error('Salary estimate response missing valid JSON output')
+    } catch (err: any) {
+      lastErr = err
+      if (err?.statusCode && err.statusCode !== 504) throw err
+      if (err?.name === 'AbortError' && attempt < 1) {
+        await new Promise(r => setTimeout(r, 1000))
+        continue
+      }
+      throw err
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  throw lastErr
 }
 
 function makeCacheKey(opts: EstimateRequest): string {

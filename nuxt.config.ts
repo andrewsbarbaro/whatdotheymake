@@ -104,12 +104,12 @@ export default defineNuxtConfig({
     kimiBaseUrl: 'https://api.moonshot.ai',
     kimiModel: 'kimi-k2.6',
     kimiModerationMaxTokens: 300,
-    kimiModerationTimeoutMs: 8000,
+    kimiModerationTimeoutMs: 15000,
 
     // Kimi salary estimation (server-only)
     kimiSalaryModel: '', // falls back to kimiModel
     kimiSalaryMaxTokens: 350,
-    kimiSalaryTimeoutMs: 8000,
+    kimiSalaryTimeoutMs: 25000,
 
     // Public keys exposed to client
     public: {
