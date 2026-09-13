@@ -204,7 +204,7 @@ async function callKimiModeration(prompt: string, event?: H3Event): Promise<Mode
   const makeRequestBody = () => ({
     model,
     max_tokens: maxTokens,
-    temperature: 0,
+    temperature: 1,
     messages: [
       {
         role: 'system',

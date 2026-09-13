@@ -209,7 +209,7 @@ async function callKimiSalaryEstimate(prompt: string, event?: H3Event): Promise<
   const makeRequestBody = (userPrompt: string) => ({
     model,
     max_tokens: maxTokens,
-    temperature: 0,
+    temperature: 1,
     messages: [
       {
         role: 'system',
